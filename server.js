@@ -1,6 +1,8 @@
 const { addonBuilder } = require("stremio-addon-sdk");
 const express = require("express");
 const path = require("path");
+const cors = require('cors');
+app.use(cors()); // Esto permite que Stremio lea tu addon desde cualquier lugar
 
 const builder = new addonBuilder({
     id: "com.navezseo.overlay",
