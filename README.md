@@ -1,6 +1,6 @@
 # 🚀 Stremio Overlay Work Mode (PiP Avanzado)
 
-![Logo](logo.png)
+![Logo](Logo/NAVEZSEO_Image_z1cb1bz1cb1bz1cb_cleanup.png)
 
 Este es un add-on avanzado para Stremio que te permite llevar tus streams a una ventana flotante (Picture-in-Picture), **encima de todas tus aplicaciones**, para que puedas ver contenido mientras trabajas.
 
