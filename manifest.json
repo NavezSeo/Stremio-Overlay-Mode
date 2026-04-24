@@ -1,11 +1,14 @@
 {
-  "id": "com.tuusuario.overlay.pip",
-  "version": "1.2.0",
-  "name": "Overlay Work Mode",
-  "description": "Herramienta avanzada para ver streams en una ventana flotante (PiP) con opacidad, filtros de color y calidad configurable mientras trabajas.",
-  "logo": "https://tu-usuario.github.io/tu-repo/logo.png",
+  "id": "com.navezseo.overlay.pip",
+  "version": "1.2.1",
+  "name": "NavezSeo Overlay Mode",
+  "description": "Picture-in-Picture avanzado con opacidad y filtros de descanso visual.",
+  "logo": "https://navezseo.github.io/stremio-overlay-work-mode/logo.png",
   "resources": ["stream"],
   "types": ["movie", "series"],
   "idPrefixes": ["tt"],
-  "catalogs": []
+  "behaviorHints": {
+    "configurable": true,
+    "configurationRequired": false
+  }
 }
