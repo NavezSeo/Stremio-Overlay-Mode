@@ -1,38 +1,143 @@
 <!DOCTYPE html>
-<html>
+<html lang="es">
 <head>
-    <title>Stremio WorkMode Player</title>
+    <meta charset="UTF-8">
+    <title>Stremio PiP Player Avanzado</title>
     <style>
-        body { background: #000; color: white; font-family: sans-serif; text-align: center; }
-        video { width: 80%; border-radius: 8px; }
-        .controls { margin-top: 20px; }
+        body { margin: 0; background: #000; color: white; font-family: sans-serif; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; overflow: hidden; }
+        
+        #player-container { width: 90%; max-width: 1000px; border-radius: 12px; overflow: hidden; box-shadow: 0 10px 30px rgba(0,0,0,0.5); position: relative; }
+        video { width: 100%; display: block; border-radius: 12px; transition: opacity 0.3s ease; }
+        
+        #overlay-controls { position: absolute; bottom: 20px; left: 50%; transform: translateX(-50%); background: rgba(20, 20, 20, 0.9); padding: 15px 25px; border-radius: 30px; display: flex; gap: 15px; align-items: center; flex-wrap: wrap; justify-content: center; backdrop-filter: blur(10px); box-shadow: 0 5px 15px rgba(0,0,0,0.3); opacity: 0; transition: opacity 0.3s ease; z-index: 10; }
+        #player-container:hover #overlay-controls { opacity: 1; }
+        
+        .control-group { display: flex; flex-direction: column; gap: 5px; align-items: flex-start; }
+        .control-group label { font-size: 0.8rem; text-transform: uppercase; letter-spacing: 1px; color: #aaa; }
+        
+        button#pipButton { background: #8152df; border: none; color: white; cursor: pointer; border-radius: 20px; padding: 10px 20px; font-weight: bold; display: flex; align-items: center; gap: 8px; font-size: 0.9rem; transition: background 0.3s ease; }
+        button#pipButton:hover { background: #9669f3; }
+        button#pipButton svg { width: 18px; height: 18px; fill: white; }
+        
+        input[type="range"] { -webkit-appearance: none; appearance: none; width: 120px; height: 6px; background: #444; border-radius: 3px; outline: none; }
+        input[type="range"]::-webkit-slider-thumb { -webkit-appearance: none; appearance: none; width: 16px; height: 16px; background: #8152df; border-radius: 50%; cursor: pointer; transition: background 0.3s ease; }
+        input[type="range"]::-webkit-slider-thumb:hover { background: #9669f3; }
+        
+        select { background: #333; color: white; border: none; padding: 8px 12px; border-radius: 15px; cursor: pointer; outline: none; font-size: 0.9rem; }
+        select option { background: #333; color: white; }
+        
+        #filter-container { display: flex; gap: 8px; }
+        .filter-btn { width: 30px; height: 30px; border-radius: 50%; border: 2px solid transparent; cursor: pointer; transition: transform 0.2s ease, border-color 0.2s ease; }
+        .filter-btn:hover { transform: scale(1.1); }
+        .filter-btn.active { border-color: #8152df; }
     </style>
 </head>
 <body>
-    <video id="videoPlayer" controls></video>
-    <div class="controls">
-        <button onclick="togglePiP()">Activar Modo Flotante (Always on Top)</button>
-        <br><br>
-        <label>Opacidad del Video:</label>
-        <input type="range" min="0.1" max="1" step="0.1" value="1" onchange="adjustOpacity(this.value)">
+
+    <div id="player-container">
+        <video id="videoPlayer" controls></video>
+        
+        <div id="overlay-controls">
+            <button id="pipButton" title="Activar Overlay PiP (Modo Trabajo)">
+                <svg viewBox="0 0 24 24"><path d="M19 11h-8v6h8v-6zm4 8V4.98C23 3.88 22.1 3 21 3H3c-1.1 0-2 .88-2 1.98V19c0 1.1.9 2 2 2h18c1.1 0 2-.9 2-2zm-2 .02H3V4.97h18v14.05z"></path></svg>
+                PIP
+            </button>
+            
+            <div class="control-group">
+                <label>Opacidad</label>
+                <input type="range" id="opacitySlider" min="0.1" max="1" step="0.1" value="1" title="Ajustar transparencia del video">
+            </div>
+            
+            <div class="control-group">
+                <label>Calidad</label>
+                <select id="qualitySelect" title="Seleccionar fuente/calidad de stream">
+                    <option value="">Por defecto</option>
+                    <option value="https://sample-videos.com/video123/mp4/720/big_buck_bunny_720p_1mb.mp4">720p (Ejemplo)</option>
+                    <option value="https://sample-videos.com/video123/mp4/480/big_buck_bunny_480p_1mb.mp4">480p (Ejemplo)</option>
+                </select>
+            </div>
+            
+            <div class="control-group">
+                <label>Descanso Visual</label>
+                <div id="filter-container">
+                    <button class="filter-btn active" data-filter="none" style="background: white;" title="Ningún filtro"></button>
+                    <button class="filter-btn" data-filter="amber" style="background: #ffcc00;" title="Filtro Ámbar (Sepia)"></button>
+                    <button class="filter-btn" data-filter="green" style="background: #b3ffb3;" title="Filtro Verde Suave"></button>
+                    <button class="filter-btn" data-filter="grey" style="background: #888;" title="Filtro Escala de Grises"></button>
+                </div>
+            </div>
+        </div>
     </div>
 
     <script>
         const video = document.getElementById('videoPlayer');
-        
-        async function togglePiP() {
+        const pipBtn = document.getElementById('pipButton');
+        const opacitySlider = document.getElementById('opacitySlider');
+        const qualitySelect = document.getElementById('qualitySelect');
+        const playerContainer = document.getElementById('player-container');
+        const filterBtns = document.querySelectorAll('.filter-btn');
+
+        // 1. Cargar Stream y Opción de Calidad
+        const params = new URLSearchParams(window.location.search);
+        const streamUrl = params.get('url');
+        if (streamUrl) video.src = streamUrl;
+
+        qualitySelect.onchange = (e) => {
+            if (e.target.value) {
+                const currentTime = video.currentTime;
+                video.src = e.target.value;
+                video.currentTime = currentTime;
+                video.play();
+            }
+        };
+
+        // 2. Opción Auto-PiP al iniciar la reproducción
+        video.onplay = () => {
+            if (document.pictureInPictureEnabled && !document.pictureInPictureElement) {
+                video.requestPictureInPicture().catch(error => {
+                    console.error("Auto-PiP falló (requiere interacción previa):", error);
+                });
+            }
+        };
+
+        // 3. Icono y Botón Activar Modo PiP
+        pipBtn.onclick = async () => {
             try {
-                if (video !== document.pictureInPictureElement) {
+                if (!document.pictureInPictureElement) {
                     await video.requestPictureInPicture();
                 } else {
                     await document.exitPictureInPicture();
                 }
-            } catch (error) { console.error(error); }
-        }
+            } catch (error) {
+                console.error("Error PiP:", error);
+                alert("Tu navegador no soporta o bloqueó el modo Picture-in-Picture.");
+            }
+        };
 
-        function adjustOpacity(val) {
-            video.style.opacity = val;
-        }
+        // 4. Controles de Opacidad
+        opacitySlider.oninput = (e) => {
+            video.style.opacity = e.target.value;
+        };
+
+        // 5. Filtros de Color para Descanso Visual
+        filterBtns.forEach(btn => {
+            btn.onclick = () => {
+                filterBtns.forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                
+                const filter = btn.dataset.filter;
+                if (filter === 'none') {
+                    video.style.filter = 'none';
+                } else if (filter === 'amber') {
+                    video.style.filter = 'sepia(80%) hue-rotate(-10deg) saturate(120%)';
+                } else if (filter === 'green') {
+                    video.style.filter = 'hue-rotate(90deg) saturate(80%)';
+                } else if (filter === 'grey') {
+                    video.style.filter = 'grayscale(100%)';
+                }
+            };
+        });
+
     </script>
 </body>
 </html>
