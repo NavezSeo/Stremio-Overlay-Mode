@@ -1,0 +1,10 @@
+{
+    "id": "org.stremio.workmode",
+    "version": "1.0.0",
+    "name": "WorkMode Overlay",
+    "description": "Añade un botón para ver streams en una ventana flotante (PiP) con opacidad ajustable.",
+    "resources": ["stream"],
+    "types": ["movie", "series"],
+    "idPrefixes": ["tt"],
+    "background": "https://tu-usuario.github.io/tu-repo/background.jpg"
+}
