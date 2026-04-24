@@ -1,25 +1,29 @@
 const { addonBuilder } = require("stremio-addon-sdk");
 const express = require("express");
+const cors = require("cors");
 const path = require("path");
-const cors = require('cors');
-app.use(cors()); // Esto permite que Stremio lea tu addon desde cualquier lugar
 
+// 1. Inicializar la app de Express PRIMERO
+const app = express();
+app.use(cors()); 
+
+// 2. Configurar el constructor del Add-on
 const builder = new addonBuilder({
     id: "com.navezseo.overlay",
-    version: "1.2.0",
+    version: "1.2.1",
     name: "NavezSeo Overlay Mode",
     description: "Modo trabajo con ventana flotante, opacidad y filtros.",
-    logo: "https://raw.githubusercontent.com/NavezSeo/tu-repo/main/logo.png", // Cambia tu-repo por el nombre real
+    logo: "https://raw.githubusercontent.com/NavezSeo/Stremio-Overlay-Mode/main/logo.png",
     resources: ["stream"],
     types: ["movie", "series"],
     idPrefixes: ["tt"]
 });
 
-// Esto hace que el add-on aparezca en la lista de enlaces de Stremio
+// 3. Definir el manejador de streams
 builder.defineStreamHandler((args) => {
-    // Aquí redirigimos el flujo hacia tu reproductor especial
-    // Nota: Reemplaza 'tu-app.render.com' por tu URL de hosting más adelante
-    const playerUrl = `https://tu-app.render.com/player?id=${args.id}`;
+    // IMPORTANTE: Aquí Render te dará una URL, úsala cuando la tengas.
+    // Por ahora usamos una ruta relativa para el reproductor.
+    const playerUrl = `/player?id=${args.id}`;
     
     return Promise.resolve({
         streams: [
@@ -32,25 +36,24 @@ builder.defineStreamHandler((args) => {
 });
 
 const addonInterface = builder.getInterface();
-const app = express();
 
-// Servir el add-on
-app.use("/", (req, res, next) => {
-    if (req.path === "/") return next();
-    addonInterface.manifest(req, res, next);
-});
-
+// 4. Rutas del Servidor
 app.get("/manifest.json", (req, res) => {
-    res.setHeader('Access-Control-Allow-Origin', '*');
-    res.json(addonInterface.manifest);
+    res.setHeader('Content-Type', 'application/json');
+    res.send(addonInterface.manifest);
 });
 
-// Ruta para el reproductor (el index.html que hicimos antes)
 app.get("/player", (req, res) => {
     res.sendFile(path.join(__dirname, "index.html"));
 });
 
+// Ruta raíz para verificar que el servidor vive
+app.get("/", (req, res) => {
+    res.send("NavezSeo Stremio Add-on está activo. Instala /manifest.json en Stremio.");
+});
+
+// 5. Encender el servidor en el puerto que Render asigne
 const port = process.env.PORT || 3000;
 app.listen(port, () => {
-    console.log(`Add-on listo en: http://localhost:${port}/manifest.json`);
+    console.log(`Servidor corriendo en el puerto ${port}`);
 });
