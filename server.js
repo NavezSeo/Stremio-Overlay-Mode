@@ -4,24 +4,24 @@ const cors = require("cors");
 const path = require("path");
 
 const app = express();
-app.use(cors()); 
 
-// Configuración del Add-on con 'catalogs' como array vacío
+// Configuración de CORS profesional para Stremio
+app.use(cors());
+
 const builder = new addonBuilder({
     id: "com.navezseo.overlay",
-    version: "1.2.2",
+    version: "1.2.3", // Subimos versión para forzar actualización
     name: "NavezSeo Overlay Mode",
     description: "Modo trabajo con ventana flotante, opacidad y filtros.",
     logo: "https://raw.githubusercontent.com/NavezSeo/Stremio-Overlay-Mode/main/logo.png",
     resources: ["stream"],
     types: ["movie", "series"],
     idPrefixes: ["tt"],
-    catalogs: [] // <--- ESTO ES LO QUE FALTABA
+    catalogs: []
 });
 
 builder.defineStreamHandler((args) => {
-    // Al usar una URL externa, Stremio abrirá el navegador
-    // IMPORTANTE: Cuando Render te dé tu URL, cámbiala aquí si es necesario
+    // IMPORTANTE: Verifica que esta URL sea EXACTAMENTE la que te da Render
     const playerUrl = `https://stremio-overlay-mode.onrender.com/player?id=${args.id}`;
     
     return Promise.resolve({
@@ -36,20 +36,22 @@ builder.defineStreamHandler((args) => {
 
 const addonInterface = builder.getInterface();
 
-// Servir el manifiesto correctamente
+// RUTA DEL MANIFIESTO (CORREGIDA)
 app.get("/manifest.json", (req, res) => {
-    res.setHeader('Content-Type', 'application/json');
-    res.send(addonInterface.manifest);
+    res.setHeader('Access-Control-Allow-Origin', '*');
+    res.setHeader('Access-Control-Allow-Headers', '*');
+    res.setHeader('Content-Type', 'application/json; charset=utf-8');
+    res.json(addonInterface.manifest);
 });
 
-// Ruta para el reproductor
+// Ruta para el reproductor index.html
 app.get("/player", (req, res) => {
     res.sendFile(path.join(__dirname, "index.html"));
 });
 
-// Ruta raíz
+// Página de inicio para confirmar que funciona
 app.get("/", (req, res) => {
-    res.send("NavezSeo Stremio Add-on está activo. Instala /manifest.json en Stremio.");
+    res.send("<h1>NavezSeo Add-on está LIVE</h1><p>Instala en Stremio usando: <b>stremio://stremio-overlay-mode.onrender.com/manifest.json</b></p>");
 });
 
 const port = process.env.PORT || 3000;
